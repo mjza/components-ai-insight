@@ -1,0 +1,6 @@
+python-dotenv
+colored
+psycopg2-binary
+pandas
+markdown
+bs4
