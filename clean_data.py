@@ -2,9 +2,10 @@ import sys
 import re
 import html
 import markdown
+from tqdm import tqdm
 from bs4 import BeautifulSoup
 from database import initialize_staging
-from database import read_stackoverflow_posts, insert_into_stage_posts_cleaned, count_posts
+from database import read_stackoverflow_posts, insert_into_stage_posts_cleaned, count_posts, last_post
 from database import read_libraries_projects, insert_into_stage_libraries_cleaned, count_libraries
 
 # Function to clean HTML tags
@@ -116,10 +117,10 @@ def extract_libraries_from_code(text):
     INSTALL_REGEX = r'\b(?:' + '|'.join(re.escape(cmd) for cmd in INSTALL_COMMANDS) + r')\s+["\']?([a-zA-Z0-9._-]+)["\']?'
 
     # Stricter regex for standard import statements
-    IMPORT_REGEX = r'\b(?:import|require|include|using)\s+["\'<]?([a-zA-Z0-9._-]+)["\'>]?'
+    IMPORT_REGEX = r'^\s*(?:import|require|include|using)\s+["\'<]?([a-zA-Z0-9._-]+)["\'>]?'
 
     # Improved "from x import y" rule for Python-style imports
-    PYTHON_FROM_IMPORT_REGEX = r'\bfrom\s+([a-zA-Z0-9._-]+)\s+import\s+'
+    PYTHON_FROM_IMPORT_REGEX = r'^\s*from\s+([a-zA-Z0-9._-]+)\s+import\s+'
 
     # Extract content inside inline (`code`) and block (```code```) backticks
     code_blocks = re.findall(r'`{1,3}(.*?)`{1,3}', text, re.DOTALL)
@@ -142,7 +143,9 @@ def extract_libraries_from_code(text):
     return ', '.join(libraries) if libraries else None
 
 
-# Function to clean StackOverflow posts
+
+
+# Function to clean StackOverflow posts with progress bar
 def clean_stackoverflow_posts(batch_size=10000):
     """
     Cleans Stack Overflow posts in batches and stores them in stage_posts_cleaned.
@@ -157,33 +160,38 @@ def clean_stackoverflow_posts(batch_size=10000):
     
     print(f"🔄 Processing {total_posts} Stack Overflow posts in batches of {batch_size}...")
 
+    start_id = last_post()
+
     processed_count = 0
 
-    for batch in read_stackoverflow_posts(batch_size=batch_size):
-        cleaned_data = []
-        for post_id, post_type, title, body, tags in batch:
-            cleaned_body = clean_markdown(body)  # Clean markdown content
-            extracted_libraries = extract_libraries_from_code(body)  # Extract possible libraries
-            processed_tags = tags.strip().lower() if tags else None
-            
-            cleaned_data.append((
-                post_id,
-                post_type,
-                clean_markdown(title),  # Clean title
-                cleaned_body,
-                processed_tags,
-                extracted_libraries  # Extracted libraries from code blocks
-            ))
+    # Initialize the progress bar
+    with tqdm(total=total_posts, desc="Processing Posts", unit="post") as pbar:
+        for batch in read_stackoverflow_posts(batch_size=batch_size, start_id=start_id):
+            cleaned_data = []
+            for post_id, post_type, title, body, tags in batch:
+                cleaned_body = clean_markdown(body)  # Clean markdown content
+                extracted_libraries = extract_libraries_from_code(body)  # Extract possible libraries
+                processed_tags = tags.strip().lower() if tags else None
+                
+                cleaned_data.append((
+                    post_id,
+                    post_type,
+                    clean_markdown(title),  # Clean title
+                    cleaned_body,
+                    processed_tags,
+                    extracted_libraries  # Extracted libraries from code blocks
+                ))
 
-        # Insert cleaned batch into stage_posts_cleaned
-        insert_into_stage_posts_cleaned(cleaned_data)
+            # Insert cleaned batch into stage_posts_cleaned
+            insert_into_stage_posts_cleaned(cleaned_data)
 
-        processed_count += len(cleaned_data)
-        print(f"✅ Processed {processed_count}/{total_posts} posts...")
+            processed_count += len(cleaned_data)
+            pbar.update(len(cleaned_data))  # Update the progress bar
 
     print(f"🎉 Finished processing all {processed_count} Stack Overflow posts!")
 
 
+# Function to clean Libraries.io projects with a progress bar
 def clean_libraries_projects(batch_size=10000):
     """
     Cleans Libraries.io projects in batches and stores them in stage_libraries_cleaned.
@@ -200,24 +208,27 @@ def clean_libraries_projects(batch_size=10000):
 
     processed_count = 0
 
-    for batch in read_libraries_projects(batch_size=batch_size):
-        cleaned_data = []
-        for id, name, platform, description in batch:
-            cleaned_data.append((
-                id,
-                normalize_library_name(name),  # Normalize library name
-                name,  # Keep the original name
-                platform,
-                clean_markdown(description) #clean_html(description)  # Clean description text
-            ))
+    # Initialize the progress bar
+    with tqdm(total=total_libraries, desc="Processing Libraries", unit="project") as pbar:
+        for batch in read_libraries_projects(batch_size=batch_size):
+            cleaned_data = []
+            for id, name, platform, description in batch:
+                cleaned_data.append((
+                    id,
+                    normalize_library_name(name),  # Normalize library name
+                    name,  # Keep the original name
+                    platform,
+                    clean_markdown(description)  # Clean description text
+                ))
 
-        # Insert cleaned batch into stage_libraries_cleaned
-        insert_into_stage_libraries_cleaned(cleaned_data)
+            # Insert cleaned batch into stage_libraries_cleaned
+            insert_into_stage_libraries_cleaned(cleaned_data)
 
-        processed_count += len(cleaned_data)
-        print(f"✅ Processed {processed_count}/{total_libraries} projects...")
+            processed_count += len(cleaned_data)
+            pbar.update(len(cleaned_data))  # Update the progress bar
 
     print(f"🎉 Finished processing all {processed_count} Libraries.io projects!")
+
     
 # The main function
 def main():

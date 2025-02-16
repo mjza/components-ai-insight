@@ -36,7 +36,7 @@ def get_connection(db_name):
 
 # ---------------------------- PAGINATED READ FUNCTIONS ----------------------------
 
-def read_stackoverflow_posts(batch_size=10000):
+def read_stackoverflow_posts(batch_size=10000, start_id=0):
     """
     Reads posts from Stack Overflow database in paginated batches.
     :param batch_size: Number of records per batch (default: 10,000)
@@ -51,7 +51,7 @@ def read_stackoverflow_posts(batch_size=10000):
 
     while True:
         cur.execute(
-            "SELECT id, posttypeid, title, body, tags FROM public.posts_md ORDER BY id LIMIT %s OFFSET %s;",
+            f"SELECT id, posttypeid, title, body, tags FROM public.posts_md WHERE id > {start_id} ORDER BY id LIMIT %s OFFSET %s;",
             (batch_size, offset),
         )
         rows = cur.fetchall()
@@ -158,6 +158,30 @@ def create_stage_tables():
 
 
 # ---------------------------- COUNT FUNCTIONS (FROM SOURCE TABLES) ----------------------------
+def last_post():
+    """
+    Gets the maximum id of posts in the destination table.
+    :return: Max ID of posts (int) or 0 if an error occurs.
+    """
+
+    conn = get_connection(DBC_NAME)
+    if not conn:
+        return 0  # Return 0 if connection fails
+
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT MAX(id) FROM public.stage_posts_cleaned;")
+        max_id = cur.fetchone()[0] or 0  # Ensure None is converted to 0
+    except Exception as e:
+        print(f"❌ Error getting the last post: {e}")
+        max_id = 0
+    finally:
+        cur.close()
+        conn.close()
+
+    return max_id  # Return the max ID or 0 if the table is empty
+
+
 def count_posts():
     """
     Count the number of posts in the Stack Overflow table.
