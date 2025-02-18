@@ -187,6 +187,7 @@ def clean_stackoverflow_posts(batch_size=10000):
 
             processed_count += len(cleaned_data)
             pbar.update(len(cleaned_data))  # Update the progress bar
+            pbar.refresh()  # Force immediate update
 
     print(f"🎉 Finished processing all {processed_count} Stack Overflow posts!")
 
@@ -226,6 +227,7 @@ def clean_libraries_projects(batch_size=10000):
 
             processed_count += len(cleaned_data)
             pbar.update(len(cleaned_data))  # Update the progress bar
+            pbar.refresh()  # Force immediate update
 
     print(f"🎉 Finished processing all {processed_count} Libraries.io projects!")
 
