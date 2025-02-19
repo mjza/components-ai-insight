@@ -5,3 +5,4 @@ pandas
 markdown
 bs4
 tqdm
+nltk

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=CleanData
+#SBATCH --job-name=TokenizeData
 #SBATCH --output=/work/barcomb_lab/Mahdi/components-ai-insight/logs/job_output_%j.log
 #SBATCH --error=/work/barcomb_lab/Mahdi/components-ai-insight/logs/job_error_%j.log
 #SBATCH --time=7-00:00:00  # 7 days
@@ -22,5 +22,14 @@ else
     source "$VENV_DIR/bin/activate"
 fi
 
+####### Cleanup Old Logs #########################
+LOG_DIR="/work/barcomb_lab/Mahdi/components-ai-insight/logs"
+
+# Delete logs older than 7 days
+find "$LOG_DIR" -type f -name "job_*.log" -mtime +7 -exec rm {} \;
+find "$LOG_DIR" -type f -name "job_error_*.log" -mtime +7 -exec rm {} \;
+
+echo "✅ Old logs cleaned up successfully!"
+
 ####### Run your script #########################
-python /work/barcomb_lab/Mahdi/components-ai-insight/01_clean_data.py all
+python /work/barcomb_lab/Mahdi/components-ai-insight/02_tokenize_data.py
