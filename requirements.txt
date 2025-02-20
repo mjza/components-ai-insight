@@ -6,3 +6,4 @@ markdown
 bs4
 tqdm
 nltk
+gensim

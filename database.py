@@ -3,6 +3,11 @@ import json
 import psycopg2
 from psycopg2.extras import execute_values
 from dotenv import load_dotenv
+import logging
+import pickle
+
+# Configure logging
+logging.basicConfig(format="%(asctime)s : %(levelname)s : %(message)s", level=logging.INFO)
 
 # Load environment variables from .env
 load_dotenv()
@@ -136,6 +141,45 @@ def read_cleaned_posts(batch_size=10000, start_id=0):
 
     cur.close()
     conn.close()
+    
+
+# **Function to Fetch Tokenized Data in Batches**
+def fetch_tokenized_batches(batch_size=10000, start_id=0):
+    conn = get_connection(DBC_NAME)
+    if not conn:
+        return
+    
+    total_processed = 0
+    offset = 0
+
+    try:
+        cur = conn.cursor()
+        while True:
+            cur.execute(
+                "SELECT id, tokenized_text FROM public.tokenized_posts WHERE id > %s ORDER BY id ASC LIMIT %s OFFSET %s;",
+                (start_id, batch_size, offset)
+            )
+            rows = cur.fetchall()
+
+            if not rows:
+                logging.info("✅ No more rows to train on. Training completed.")
+                break
+
+            sentences = [row[1].split() for row in rows]  # Convert space-separated text into list of words
+            last_processed_id = rows[-1][0]  # Track last processed ID
+
+            total_processed += len(rows)
+            yield sentences, last_processed_id, total_processed
+            offset += batch_size  # Move to next batch
+
+    except Exception as e:
+        logging.error(f"❌ Error fetching tokenized batches: {e}")
+
+    finally:
+        cur.close()
+        conn.close()
+
+
 
 # ---------------------------- TABLE CREATION (STORED IN DBC_NAME) ----------------------------
 
@@ -184,6 +228,23 @@ def create_stage_tables():
             tokenized_array JSONB,
             FOREIGN KEY (post_id) REFERENCES stage_posts_cleaned(id)
         );
+        """,
+        """
+        -- Track the last processed row for training
+        CREATE TABLE IF NOT EXISTS public.word2vec_training_progress (
+            id SERIAL PRIMARY KEY,
+            last_processed_id INT NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        """,
+        """
+        -- Store trained Word2Vec models
+        CREATE TABLE IF NOT EXISTS public.word2vec_models (
+            id SERIAL PRIMARY KEY,
+            model_version INT NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW(),
+            model BYTEA NOT NULL  -- Store model as binary
+        );
         """
     ]
 
@@ -197,7 +258,43 @@ def create_stage_tables():
 
 # ---------------------------- COUNT FUNCTIONS (FROM SOURCE TABLES) ----------------------------
 
-# **Function to Fetch Last Processed ID**
+# **Function to Fetch Count Processed Toekn**
+def count_processed_token():
+    conn = get_connection(DBC_NAME)
+    if not conn:
+        return 0  # Return 0 if connection fails
+    try:
+        cur = conn.cursor()
+        cur .execute("SELECT COUNT(*) FROM public.word2vec_training_progress;")
+        count = cur.fetchone()[0] or 0  # Ensure None is converted to 0
+    except Exception as e:
+        print(f"❌ Error getting the last post: {e}")
+        count = 0
+    finally:
+        cur.close()
+        conn.close()
+
+    return count  # Return the count or 0 if the table is empty
+
+# **Function to Fetch Last Processed Toekn**
+def last_processed_token():
+    conn = get_connection(DBC_NAME)
+    if not conn:
+        return 0  # Return 0 if connection fails
+    try:
+        cur = conn.cursor()
+        cur .execute("SELECT MAX(post_id) FROM public.word2vec_training_progress;")
+        max_id = cur.fetchone()[0] or 0  # Ensure None is converted to 0
+    except Exception as e:
+        print(f"❌ Error getting the last post: {e}")
+        max_id = 0
+    finally:
+        cur.close()
+        conn.close()
+
+    return max_id  # Return the max ID or 0 if the table is empty
+
+# **Function to Fetch Last Processed Post**
 def last_tokenized_post():
     conn = get_connection(DBC_NAME)
     if not conn:
@@ -389,7 +486,41 @@ def insert_into_tokenized_posts(data):
     cur.close()
     conn.close()    
 
+def update_last_processed_id(last_id):
+    if not last_id:
+        return
 
+    conn = get_connection(DBC_NAME)
+    if not conn:
+        return
+
+    cur = conn.cursor()
+    cur.execute("INSERT INTO public.word2vec_training_progress (last_processed_id) VALUES (%s);", (last_id,))
+    conn.commit()
+    cur.close()
+    conn.close()  
+
+# **Function to Save Model to Database**
+def save_model_to_db(model, version):
+    conn = get_connection(DBC_NAME)
+    if not conn:
+        return
+
+    try:
+        cur = conn.cursor()
+        model_binary = pickle.dumps(model)  # Serialize model
+        cur.execute(
+            "INSERT INTO public.word2vec_models (model_version, model) VALUES (%s, %s);",
+            (version, psycopg2.Binary(model_binary))
+        )
+        conn.commit()
+        logging.info(f"✅ Model version {version} saved to database.")
+    except Exception as e:
+        logging.error(f"❌ Error saving model to DB: {e}")
+    finally:
+        cur.close()
+        conn.close()
+    
 # ---------------------------- DATABASE INITIALIZATION FUNCTION ----------------------------
 
 def initialize_staging():
