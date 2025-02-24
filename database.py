@@ -156,7 +156,7 @@ def fetch_tokenized_batches(batch_size=10000, start_id=0):
         cur = conn.cursor()
         while True:
             cur.execute(
-                "SELECT post_id, tokenized_text FROM public.tokenized_posts WHERE id > %s ORDER BY id ASC LIMIT %s OFFSET %s;",
+                "SELECT post_id, tokenized_text FROM public.tokenized_posts WHERE post_id > %s ORDER BY id ASC LIMIT %s OFFSET %s;",
                 (start_id, batch_size, offset)
             )
             rows = cur.fetchall()
