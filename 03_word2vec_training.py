@@ -3,6 +3,7 @@ import os
 from tqdm import tqdm
 from gensim.models import Word2Vec
 from database import (
+    initialize_staging,
     fetch_tokenized_batches,
     last_processed_token,
     update_last_processed_id,
@@ -64,4 +65,5 @@ def train_word2vec():
 
 # **Run Training**
 if __name__ == "__main__":
+    initialize_staging()
     train_word2vec()

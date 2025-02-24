@@ -231,7 +231,7 @@ def create_stage_tables():
         """,
         """
         -- Track the last processed row for training
-        CREATE TABLE IF NOT EXISTS public.word2vec_training_progress (
+        CREATE TABLE IF NOT EXISTS word2vec_training_progress (
             id SERIAL PRIMARY KEY,
             last_processed_id INT NOT NULL DEFAULT 0,
             created_at TIMESTAMP DEFAULT NOW()
@@ -239,7 +239,7 @@ def create_stage_tables():
         """,
         """
         -- Store trained Word2Vec models
-        CREATE TABLE IF NOT EXISTS public.word2vec_models (
+        CREATE TABLE IF NOT EXISTS word2vec_models (
             id SERIAL PRIMARY KEY,
             model_version INT NOT NULL,
             created_at TIMESTAMP DEFAULT NOW(),
