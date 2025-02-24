@@ -36,6 +36,14 @@ def train_word2vec():
         logging.info("🆕 Creating new Word2Vec model...")
         model = Word2Vec(vector_size=VECTOR_SIZE, window=WINDOW, min_count=MIN_COUNT, workers=WORKERS)
 
+        # Build the vocabulary with the first batch
+        initial_batch = next(fetch_tokenized_batches(batch_size=10000, start_id=0), None)
+        if initial_batch:
+            sentences, last_processed_id, total_processed = initial_batch
+            model.build_vocab(sentences)  # Build vocabulary from initial batch
+            logging.info(f"✅ Vocabulary initialized with {len(sentences)} sentences.")
+            update_last_processed_id(last_processed_id)
+
     # **Train in Batches**
     start_id = last_processed_token()
     total_rows = 0
@@ -43,8 +51,8 @@ def train_word2vec():
 
     for sentences, last_processed_id, total_processed in fetch_tokenized_batches(start_id=start_id):
         if len(sentences) > 0:
-            model.build_vocab(sentences, update=True)
-            model.train(sentences, total_examples=len(sentences), epochs=5)
+            model.build_vocab(sentences, update=True)  # Update the vocabulary
+            model.train(sentences, total_examples=len(sentences), epochs=5)  # Train the model
 
             # Save Model & Update Progress in DB
             model.save(W2V_MODEL_PATH)
