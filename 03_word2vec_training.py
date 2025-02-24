@@ -7,8 +7,7 @@ from database import (
     fetch_tokenized_batches,
     last_processed_token,
     update_last_processed_id,
-    save_model_to_db,
-    count_processed_token
+    save_model_to_db
 )
 
 # Word2Vec Config
@@ -39,7 +38,7 @@ def train_word2vec():
 
     # **Train in Batches**
     start_id = last_processed_token()
-    total_rows = count_processed_token()
+    total_rows = 0
     progress_bar = tqdm(desc="Training Word2Vec", unit=" rows", dynamic_ncols=True)
 
     for sentences, last_processed_id, total_processed in fetch_tokenized_batches(start_id=start_id):

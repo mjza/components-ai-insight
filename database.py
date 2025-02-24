@@ -258,24 +258,6 @@ def create_stage_tables():
 
 # ---------------------------- COUNT FUNCTIONS (FROM SOURCE TABLES) ----------------------------
 
-# **Function to Fetch Count Processed Toekn**
-def count_processed_token():
-    conn = get_connection(DBC_NAME)
-    if not conn:
-        return 0  # Return 0 if connection fails
-    try:
-        cur = conn.cursor()
-        cur .execute("SELECT COUNT(*) FROM public.word2vec_training_progress;")
-        count = cur.fetchone()[0] or 0  # Ensure None is converted to 0
-    except Exception as e:
-        print(f"❌ Error getting the last post: {e}")
-        count = 0
-    finally:
-        cur.close()
-        conn.close()
-
-    return count  # Return the count or 0 if the table is empty
-
 # **Function to Fetch Last Processed Toekn**
 def last_processed_token():
     conn = get_connection(DBC_NAME)
@@ -283,7 +265,7 @@ def last_processed_token():
         return 0  # Return 0 if connection fails
     try:
         cur = conn.cursor()
-        cur .execute("SELECT MAX(post_id) FROM public.word2vec_training_progress;")
+        cur .execute("SELECT MAX(last_processed_id) FROM public.word2vec_training_progress;")
         max_id = cur.fetchone()[0] or 0  # Ensure None is converted to 0
     except Exception as e:
         print(f"❌ Error getting the last post: {e}")
