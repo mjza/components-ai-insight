@@ -31,30 +31,41 @@ except Exception as e:
     print(f"❌ Error connecting to the database: {e}", flush=True)
     exit()
 
-# Fetch all quality attributes from the table
-cursor.execute("SELECT attribute FROM quality_attributes;")
-attributes = cursor.fetchall()
+# Define pagination variables
+BATCH_SIZE = 100  # Number of rows per batch
+offset = 0  # Start from the beginning
+num = 1  # Counter for tracking processed attributes
 
-# Process each attribute and find related words
-num = 1
-for (attribute,) in attributes:
-    if attribute in model.wv:
-        # Find similar words with similarity > 0.9
-        similar_words = model.wv.most_similar(attribute, topn=50)
-        filtered_words = [word for word, similarity in similar_words if similarity > 0.5]
+# Paginate through the quality attributes table
+while True:
+    cursor.execute("SELECT attribute FROM quality_attributes ORDER BY attribute LIMIT %s OFFSET %s;", (BATCH_SIZE, offset))
+    attributes = cursor.fetchall()
 
-        # Update the related_words column in the database
-        cursor.execute(
-            "UPDATE quality_attributes SET related_words = %s WHERE attribute = %s;",
-            (filtered_words, attribute)
-        )
-        print(f"🔹{num}. Quality Criterion: {attribute}", flush=True)
-        print(f"   Related Words: {', '.join(filtered_words)}", flush=True)
-        num = num + 1
-        
-# Commit the changes and close the connection
-conn.commit()
+    if not attributes:
+        break  # Exit loop when there are no more attributes to fetch
+
+    # Process each attribute and find related words
+    for (attribute,) in attributes:
+        if attribute in model.wv:
+            # Find similar words with similarity > 0.5
+            similar_words = model.wv.most_similar(attribute, topn=50)
+            filtered_words = [word for word, similarity in similar_words if similarity > 0.5]
+
+            # Update the related_words column in the database
+            cursor.execute(
+                "UPDATE quality_attributes SET related_words = %s WHERE attribute = %s;",
+                (filtered_words, attribute)
+            )
+            print(f"🔹 {num}. Quality Criterion: {attribute}", flush=True)
+            print(f"   Related Words: {', '.join(filtered_words)}", flush=True)
+            num += 1
+
+    # Move to the next batch
+    offset += BATCH_SIZE
+    conn.commit()  # Commit after each batch to avoid data loss
+
+# Close the connection
 cursor.close()
 conn.close()
 
-print("✅ Quality attributes updated with related words.", flush=True)
+print("✅ All quality attributes updated with related words.", flush=True)
