@@ -14,7 +14,7 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_PORT = os.getenv("DB_PORT")
 
 # Load the custom-trained Word2Vec model
-model = Word2Vec.load("stackoverflow_word2vec.model")
+model = Word2Vec.load("stackoverflow_7g_word2vec.model")
 
 # Connect to the PostgreSQL database
 try:

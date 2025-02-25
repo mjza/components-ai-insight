@@ -1,7 +1,7 @@
 from gensim.models import Word2Vec
 
 # Load the custom-trained Word2Vec model
-model = Word2Vec.load("stackoverflow_word2vec.model")
+model = Word2Vec.load("stackoverflow_7g_word2vec.model")
 
 # Define quality criteria
 quality_criteria = ["performance", "security", "usability", "scalability", "maintainability"]
