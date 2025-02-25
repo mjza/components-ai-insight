@@ -36,20 +36,22 @@ cursor.execute("SELECT attribute FROM quality_attributes;")
 attributes = cursor.fetchall()
 
 # Process each attribute and find related words
+num = 1
 for (attribute,) in attributes:
     if attribute in model.wv:
         # Find similar words with similarity > 0.9
         similar_words = model.wv.most_similar(attribute, topn=50)
-        filtered_words = [word for word, similarity in similar_words if similarity > 0.9]
+        filtered_words = [word for word, similarity in similar_words if similarity > 0.5]
 
         # Update the related_words column in the database
         cursor.execute(
             "UPDATE quality_attributes SET related_words = %s WHERE attribute = %s;",
             (filtered_words, attribute)
         )
-        print(f"🔹 Quality Criterion: {attribute}", flush=True)
+        print(f"🔹{num}. Quality Criterion: {attribute}", flush=True)
         print(f"   Related Words: {', '.join(filtered_words)}", flush=True)
-
+        num = num + 1
+        
 # Commit the changes and close the connection
 conn.commit()
 cursor.close()
