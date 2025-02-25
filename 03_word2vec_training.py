@@ -56,14 +56,16 @@ def train_word2vec():
 
             # Save Model & Update Progress in DB
             model.save(W2V_MODEL_PATH)
-            # Save model to DB
-            save_model_to_db(model, model_version)
+            
             update_last_processed_id(last_processed_id)
 
             # Update progress bar
             progress_bar.update(total_processed - total_rows)
             total_rows = total_processed
 
+    # Save model to DB
+    save_model_to_db(model, model_version)
+    
     progress_bar.close()
 
     logging.info("🎉 Training complete! Final model saved.")
