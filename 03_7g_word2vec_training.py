@@ -1,6 +1,7 @@
 import logging
 import os
 from tqdm import tqdm
+from datetime import datetime
 from gensim.models import Word2Vec
 from database import (
     initialize_staging,
@@ -40,15 +41,12 @@ def generate_phrases(sentences):
 # **Function to Train Word2Vec with Phrases**
 def train_word2vec():
     model = None
-    model_version = 1  # Track model versioning
+    model_version = 0  # Track model versioning
 
     # Load Existing Model if Available
     if os.path.exists(W2V_MODEL_PATH):
         logging.info("🔄 Loading existing Word2Vec model...")
         model = Word2Vec.load(W2V_MODEL_PATH)
-
-        # Get latest model version
-        model_version = last_processed_token_7g() + 1
     else:
         logging.info("🆕 Creating new Word2Vec model...")
         model = Word2Vec(vector_size=VECTOR_SIZE, window=WINDOW, min_count=MIN_COUNT, workers=WORKERS)
@@ -79,14 +77,20 @@ def train_word2vec():
 
             # Save Model & Update Progress in DB
             model.save(W2V_MODEL_PATH)
+            print(f"Saved at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.", flush=True)
             update_last_processed_id_7g(last_processed_id)
 
             # Update progress bar
             progress_bar.update(total_processed - total_rows)
             total_rows = total_processed
-
-    # Save model to DB
-    save_model_to_db(model, model_version)
+            new_version = total_rows // 1000000
+            if new_version > model_version:
+                model_version = new_version
+                # Save model to DB
+                save_model_to_db(model, model_version)
+                NEW_W2V_MODEL_PATH = W2V_MODEL_PATH.replace(".model", f"_v{model_version}.model")
+                model.save(NEW_W2V_MODEL_PATH)
+    
     progress_bar.close()
 
     logging.info("🎉 Training complete! Final model saved.")
