@@ -88,7 +88,7 @@ def train_word2vec():
                 model_version = new_version
                 # Save model to DB
                 save_model_to_db(model, model_version)
-                NEW_W2V_MODEL_PATH = W2V_MODEL_PATH.replace(".model", f"_v{model_version}.model")
+                NEW_W2V_MODEL_PATH = "./versions/" + W2V_MODEL_PATH.replace(".model", f"_v{model_version}.model")
                 model.save(NEW_W2V_MODEL_PATH)
     
     progress_bar.close()
