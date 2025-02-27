@@ -238,6 +238,14 @@ def create_stage_tables():
         );
         """,
         """
+        -- Track the last processed row for training
+        CREATE TABLE IF NOT EXISTS word2vec_7g_training_progress (
+            id SERIAL PRIMARY KEY,
+            last_processed_id INT NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        """,
+        """
         -- Store trained Word2Vec models
         CREATE TABLE IF NOT EXISTS word2vec_models (
             id SERIAL PRIMARY KEY,
@@ -266,6 +274,23 @@ def last_processed_token():
     try:
         cur = conn.cursor()
         cur .execute("SELECT MAX(last_processed_id) FROM public.word2vec_training_progress;")
+        max_id = cur.fetchone()[0] or 0  # Ensure None is converted to 0
+    except Exception as e:
+        print(f"❌ Error getting the last post: {e}")
+        max_id = 0
+    finally:
+        cur.close()
+        conn.close()
+
+    return max_id  # Return the max ID or 0 if the table is empty
+
+def last_processed_token_7g():
+    conn = get_connection(DBC_NAME)
+    if not conn:
+        return 0  # Return 0 if connection fails
+    try:
+        cur = conn.cursor()
+        cur .execute("SELECT MAX(last_processed_id) FROM public.word2vec_7g_training_progress;")
         max_id = cur.fetchone()[0] or 0  # Ensure None is converted to 0
     except Exception as e:
         print(f"❌ Error getting the last post: {e}")
@@ -478,6 +503,21 @@ def update_last_processed_id(last_id):
 
     cur = conn.cursor()
     cur.execute("INSERT INTO public.word2vec_training_progress (last_processed_id) VALUES (%s);", (last_id,))
+    conn.commit()
+    cur.close()
+    conn.close()  
+
+
+def update_last_processed_id_7g(last_id):
+    if not last_id:
+        return
+
+    conn = get_connection(DBC_NAME)
+    if not conn:
+        return
+
+    cur = conn.cursor()
+    cur.execute("INSERT INTO public.word2vec_7g_training_progress (last_processed_id) VALUES (%s);", (last_id,))
     conn.commit()
     cur.close()
     conn.close()  

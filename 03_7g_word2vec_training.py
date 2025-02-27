@@ -1,10 +1,13 @@
 import logging
 import os
 from tqdm import tqdm
-from gensim.models import Word2Vec, Phrases
-from gensim.models.phrases import Phraser
+from gensim.models import Word2Vec
 from database import (
-    fetch_tokenized_batches
+    initialize_staging,
+    fetch_tokenized_batches,
+    last_processed_token_7g,
+    update_last_processed_id_7g,
+    save_model_to_db
 )
 
 # Word2Vec Config
@@ -17,7 +20,6 @@ PHRASE_LENGTH = 7  # Maximum length of phrases
 
 logging.basicConfig(format="%(asctime)s : %(levelname)s : %(message)s", level=logging.INFO)
 
-
 # **Function to Generate N-grams up to 7-words**
 def generate_phrases(sentences):
     """
@@ -26,27 +28,27 @@ def generate_phrases(sentences):
     phrases = sentences.copy()
 
     for n in range(2, PHRASE_LENGTH + 1):  # Generate from 2-grams to 7-grams
-        ngram_phrases = []
         for sentence in sentences:
             ngrams = [
                 "_".join(sentence[i:i + n])  # Join words with underscores
                 for i in range(len(sentence) - n + 1)
             ]
-            ngram_phrases.append(sentence + ngrams)  # Combine words with n-grams
-        phrases = ngram_phrases
+            phrases.append(ngrams)  # Append n-grams to phrases
 
     return phrases
-
 
 # **Function to Train Word2Vec with Phrases**
 def train_word2vec():
     model = None
+    model_version = 1  # Track model versioning
 
     # Load Existing Model if Available
     if os.path.exists(W2V_MODEL_PATH):
         logging.info("🔄 Loading existing Word2Vec model...")
         model = Word2Vec.load(W2V_MODEL_PATH)
 
+        # Get latest model version
+        model_version = last_processed_token_7g() + 1
     else:
         logging.info("🆕 Creating new Word2Vec model...")
         model = Word2Vec(vector_size=VECTOR_SIZE, window=WINDOW, min_count=MIN_COUNT, workers=WORKERS)
@@ -59,9 +61,10 @@ def train_word2vec():
             sentences_with_phrases = generate_phrases(sentences)
             model.build_vocab(sentences_with_phrases)  # Build vocabulary from initial batch
             logging.info(f"✅ Vocabulary initialized with {len(sentences_with_phrases)} sentences.")
+            update_last_processed_id_7g(last_processed_id)
 
     # **Train in Batches**
-    start_id = 0
+    start_id = last_processed_token_7g()
     total_rows = 0
     progress_bar = tqdm(desc="Training Word2Vec", unit=" rows", dynamic_ncols=True)
 
@@ -76,16 +79,19 @@ def train_word2vec():
 
             # Save Model & Update Progress in DB
             model.save(W2V_MODEL_PATH)
+            update_last_processed_id_7g(last_processed_id)
 
             # Update progress bar
             progress_bar.update(total_processed - total_rows)
             total_rows = total_processed
 
+    # Save model to DB
+    save_model_to_db(model, model_version)
     progress_bar.close()
 
     logging.info("🎉 Training complete! Final model saved.")
 
-
 # **Run Training**
 if __name__ == "__main__":
+    initialize_staging()
     train_word2vec()
