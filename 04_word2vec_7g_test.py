@@ -1,21 +1,49 @@
-from gensim.models import Word2Vec
+import gensim
+import os
 
-# Load the existing Word2Vec model
-model = Word2Vec.load("stackoverflow_7g_word2vec.model")
+# Path to your trained model
+MODEL_PATH = "stackoverflow_7g_word2vec.model"
 
-# Function to extract N-grams from the model's vocabulary
-def extract_ngrams(model, n, top_n=10):
-    ngrams = [word for word in model.wv.index_to_key if len(word.split('_')) == n]
-    return ngrams[:top_n]
+# **Load Word2Vec Model**
+if not os.path.exists(MODEL_PATH):
+    print(f"❌ Model file '{MODEL_PATH}' not found!")
+    exit()
 
-# Extract and print top 10 2-grams
-top_2grams = extract_ngrams(model, 2)
-print("Top 10 2-grams:")
-for ngram in top_2grams:
-    print(ngram)
+print("🔄 Loading Word2Vec model...")
+model = gensim.models.Word2Vec.load(MODEL_PATH)
+print("✅ Model loaded successfully!")
 
-# Extract and print top 10 7-grams
-top_7grams = extract_ngrams(model, 7)
-print("\nTop 10 7-grams:")
-for ngram in top_7grams:
-    print(ngram)
+# **Check Vocabulary**
+vocab = list(model.wv.index_to_key)  # Get all words/phrases
+print(f"🧠 Vocabulary size: {len(vocab)} words/phrases")
+
+# **Display Sample Words/Phrases**
+print("\n🔹 Sample Words & Phrases from the Model:")
+for word in vocab[:30]:  # Show first 30 words
+    print(f"   {word}")
+
+# **Check if Multi-Word Phrases Exist**
+ngram_count = sum(1 for word in vocab if "_" in word)
+print(f"\n📝 Found {ngram_count} multi-word phrases (n-grams) in the model!")
+
+# **Search for N-Grams**
+search_terms = ["machine_learning", "error_message", "database_query", "performance_optimization"]
+
+print("\n🔍 Checking if some n-grams exist in the model:")
+for term in search_terms:
+    if term in model.wv:
+        print(f"   ✅ '{term}' exists in the model!")
+    else:
+        print(f"   ❌ '{term}' not found.")
+
+# **Find Similar Words/N-Grams**
+while True:
+    query = input("\n🔍 Enter a word/phrase to find similar words (or 'exit' to quit): ").strip()
+    if query.lower() == "exit":
+        break
+    if query in model.wv:
+        print(f"📌 Similar words to '{query}':")
+        for word, score in model.wv.most_similar(query, topn=10):
+            print(f"   {word} (score: {score:.4f})")
+    else:
+        print(f"❌ '{query}' not found in the model.")
