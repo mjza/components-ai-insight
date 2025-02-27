@@ -46,9 +46,11 @@ while True:
 
     # Process each attribute and find related words
     for (attribute,) in attributes:
-        if attribute in model.wv:
+        attribute_ngram = attribute.replace(" ", "_")  # Replace spaces with underscores
+
+        if attribute_ngram in model.wv:
             # Find similar words with similarity > 0.5
-            similar_words = model.wv.most_similar(attribute, topn=50)
+            similar_words = model.wv.most_similar(attribute_ngram, topn=50)
             filtered_words = [word for word, similarity in similar_words if similarity > 0.5]
 
             # Update the related_words column in the database
@@ -56,7 +58,7 @@ while True:
                 "UPDATE quality_attributes SET related_words = %s WHERE attribute = %s;",
                 (filtered_words, attribute)
             )
-            print(f"🔹 {num}. Quality Criterion: {attribute}", flush=True)
+            print(f"🔹 {num}. Quality Criterion: {attribute} → {attribute_ngram}", flush=True)
             print(f"   Related Words: {', '.join(filtered_words)}", flush=True)
             num += 1
 
