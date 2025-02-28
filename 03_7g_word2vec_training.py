@@ -29,12 +29,14 @@ def generate_phrases(sentences):
     phrases = sentences.copy()
 
     for n in range(2, PHRASE_LENGTH + 1):  # Generate from 2-grams to 7-grams
+        ngram_phrases = []
         for sentence in sentences:
             ngrams = [
                 "_".join(sentence[i:i + n])  # Join words with underscores
                 for i in range(len(sentence) - n + 1)
             ]
-            phrases.append(ngrams)  # Append n-grams to phrases
+            ngram_phrases.append(sentence + ngrams)  # Combine words with n-grams
+        phrases = ngram_phrases
 
     return phrases
 
