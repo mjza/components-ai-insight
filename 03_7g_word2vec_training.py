@@ -36,7 +36,7 @@ def generate_phrases(sentences):
                 for i in range(len(sentence) - n + 1)
             ]
             ngram_phrases.append(sentence + ngrams)  # Combine words with n-grams
-        phrases = ngram_phrases
+        phrases.append(ngram_phrases)
 
     return phrases
 
