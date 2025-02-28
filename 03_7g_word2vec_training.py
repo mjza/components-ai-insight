@@ -17,29 +17,30 @@ VECTOR_SIZE = 200
 WINDOW = 5
 MIN_COUNT = 5
 WORKERS = 4
-PHRASE_LENGTH = 7  # Maximum length of phrases
 
 logging.basicConfig(format="%(asctime)s : %(levelname)s : %(message)s", level=logging.INFO)
 
 # **Function to Generate N-grams up to 7-words**
-def generate_phrases(sentences):
+def generate_phrases(sentences, phrase_length=7): # Maximum length of phrases
     """
-    Generates phrases up to PHRASE_LENGTH words from tokenized text.
+    Generates phrases up to `phrase_length` words from tokenized text.
+    :param sentences: List of tokenized sentences (each sentence is a list of words)
+    :param phrase_length: Maximum length of n-grams to generate
+    :return: List of sentences with added n-grams
     """
-    phrases = sentences.copy()
+    phrase_sentences = []  # Store sentences with their n-grams
 
-    for n in range(2, PHRASE_LENGTH + 1):  # Generate from 2-grams to 7-grams
-        ngram_phrases = []
-        for sentence in sentences:
+    for sentence in sentences:
+        new_sentence = sentence.copy()  # Copy original words
+        for n in range(2, phrase_length + 1):  # Generate from 2-grams to max length
             ngrams = [
                 "_".join(sentence[i:i + n])  # Join words with underscores
                 for i in range(len(sentence) - n + 1)
             ]
-            ngram_phrases.append(sentence + ngrams)  # Combine words with n-grams
-        phrases.append(ngram_phrases)
+            new_sentence.extend(ngrams)  # Append n-grams to sentence
+        phrase_sentences.append(new_sentence)  # Store updated sentence
 
-    return phrases
-
+    return phrase_sentences
 # **Function to Train Word2Vec with Phrases**
 def train_word2vec():
     model = None
