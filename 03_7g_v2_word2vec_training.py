@@ -69,7 +69,7 @@ def train_word2vec():
     total_rows = 0
     progress_bar = tqdm(desc="Training Word2Vec", unit=" rows", dynamic_ncols=True)
 
-    initial_alpha = 0.025  # Default initial learning rate
+    initial_alpha = getattr(model, "alpha", 0.025) # Default initial learning rate
     min_alpha = 0.0001     # Minimum learning rate
 
     # Compute decay based on number of training iterations
