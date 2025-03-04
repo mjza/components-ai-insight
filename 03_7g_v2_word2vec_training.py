@@ -82,6 +82,10 @@ def train_word2vec():
 
             # Update vocabulary and train the model
             model.build_vocab(sentences_with_phrases, update=True)  # Update vocabulary
+
+            # Manually reset alpha to prevent "Effective 'alpha' higher than previous training cycles" warning
+            model.alpha = initial_alpha  # Restore previous alpha
+            model.min_alpha = min_alpha  # Restore min alpha
             
             # Train with controlled learning rate decay
             for epoch in range(5):  # Number of training epochs
