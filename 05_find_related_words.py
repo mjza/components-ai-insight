@@ -58,9 +58,9 @@ while True:
         attribute_ngram = attribute.replace(" ", "_")  # Replace spaces with underscores
 
         if attribute_ngram in model.wv:
-            # Find similar words with similarity > 0.9
-            similar_words = model.wv.most_similar(attribute_ngram, topn=200)
-            filtered_words = [word for word, similarity in similar_words if similarity >= 0.9]
+            # Find similar words with similarity > 0.8
+            similar_words = model.wv.most_similar(attribute_ngram, topn=50)
+            filtered_words = [word for word, similarity in similar_words if similarity >= 0.8]
             filtered_words = [word.replace("_", " ") for word in filtered_words]
 
             # Update the related_words column in the database
