@@ -49,18 +49,17 @@ while True:
         attribute_ngram = attribute.replace(" ", "_")  # Replace spaces with underscores
 
         if attribute_ngram in model.wv:
-            # Find similar words with similarity > 0.7
-            similar_words = model.wv.most_similar(attribute_ngram, topn=50)
-            filtered_words = [word for word, similarity in similar_words if similarity > 0.7]
+            # Find similar words with similarity > 0.9
+            similar_words = model.wv.most_similar(attribute_ngram, topn=200)
+            filtered_words = [word for word, similarity in similar_words if similarity >= 0.9]
             filtered_words = [word.replace("_", " ") for word in filtered_words]
 
             # Update the related_words column in the database
-            """
             cursor.execute(
                 "UPDATE quality_attributes SET related_words = %s WHERE attribute = %s;",
                 (filtered_words, attribute)
             )
-            """
+            
             print(f"🔹 {num}. Quality Criterion: {attribute} → {attribute_ngram}", flush=True)
             print(f"   Related Words: {', '.join(filtered_words)}", flush=True)
             num += 1
