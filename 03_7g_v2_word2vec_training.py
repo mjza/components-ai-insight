@@ -69,28 +69,30 @@ def train_word2vec():
     total_rows = 0
     progress_bar = tqdm(desc="Training Word2Vec", unit=" rows", dynamic_ncols=True)
 
-    initial_alpha = getattr(model, "alpha", 0.025) # Default initial learning rate
-    min_alpha = 0.0001     # Minimum learning rate
-
-    # Compute decay based on number of training iterations
-    alpha_step = (initial_alpha - min_alpha) / 5  # 5 epochs
-
     for sentences, last_processed_id, total_processed in fetch_tokenized_batches(start_id=start_id):
         if len(sentences) > 0:
             # Generate phrases
             sentences_with_phrases = generate_phrases(sentences)
 
+            # ⚠️ Save the previous alpha before updating vocab
+            prev_alpha = model.alpha  
+            prev_min_alpha = model.min_alpha  
+
             # Update vocabulary and train the model
             model.build_vocab(sentences_with_phrases, update=True)  # Update vocabulary
 
             # Manually reset alpha to prevent "Effective 'alpha' higher than previous training cycles" warning
-            model.alpha = initial_alpha  # Restore previous alpha
-            model.min_alpha = min_alpha  # Restore min alpha
+            model.alpha = prev_alpha  # Restore previous alpha
+            model.min_alpha = prev_min_alpha  # Restore min alpha
             
+            # 🏁 Dynamically compute alpha decay
+            num_epochs = 5  # Number of training epochs
+            alpha_step = (model.alpha - model.min_alpha) / num_epochs
+
             # Train with controlled learning rate decay
-            for epoch in range(5):  # Number of training epochs
-                alpha = max(min_alpha, initial_alpha - epoch * alpha_step)  # Reduce alpha each epoch
-                model.train(sentences_with_phrases, total_examples=len(sentences_with_phrases), epochs=1, start_alpha=alpha, end_alpha=min_alpha)
+            for epoch in range(num_epochs):
+                current_alpha = max(model.min_alpha, model.alpha - epoch * alpha_step)
+                model.train(sentences_with_phrases, total_examples=len(sentences_with_phrases), epochs=1, start_alpha=current_alpha, end_alpha=model.min_alpha)
 
             # Save Model & Update Progress in DB
             model.save(W2V_MODEL_PATH)
