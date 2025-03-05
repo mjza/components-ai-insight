@@ -1,4 +1,5 @@
 import os
+import argparse
 from dotenv import load_dotenv
 import psycopg2
 from gensim.models import Word2Vec
@@ -13,8 +14,16 @@ DB_NAME = os.getenv("DBC_NAME")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_PORT = os.getenv("DB_PORT")
 
-# Load the custom-trained Word2Vec model
-model = Word2Vec.load("stackoverflow_7g_v2_word2vec.model", mmap="r")
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description="Update quality attributes with related words using Word2Vec.")
+parser.add_argument("--version", type=int, default=32, help="Version number to use in model filename (default: 32)")
+
+args = parser.parse_args()
+model_version = f"_MV{args.version}" if args.version else ""
+
+# Load the custom-trained Word2Vec model using the provided version
+model_filename = f"./versions/stackoverflow_7g_v2_word2vec{model_version}.model" if args.version else "stackoverflow_7g_v2_word2vec.model"
+model = Word2Vec.load(model_filename, mmap="r")
 
 # Connect to the PostgreSQL database
 try:
