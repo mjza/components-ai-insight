@@ -14,7 +14,7 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_PORT = os.getenv("DB_PORT")
 
 # Load the custom-trained Word2Vec model
-model = Word2Vec.load("stackoverflow_7g_word2vec.model", mmap="r")
+model = Word2Vec.load("stackoverflow_7g_v2_word2vec.model", mmap="r")
 
 # Connect to the PostgreSQL database
 try:
@@ -55,10 +55,12 @@ while True:
             filtered_words = [word.replace("_", " ") for word in filtered_words]
 
             # Update the related_words column in the database
+            """
             cursor.execute(
                 "UPDATE quality_attributes SET related_words = %s WHERE attribute = %s;",
                 (filtered_words, attribute)
             )
+            """
             print(f"🔹 {num}. Quality Criterion: {attribute} → {attribute_ngram}", flush=True)
             print(f"   Related Words: {', '.join(filtered_words)}", flush=True)
             num += 1
