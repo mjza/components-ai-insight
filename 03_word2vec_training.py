@@ -65,12 +65,12 @@ def train_word2vec():
             if new_version > model_version:
                 model_version = new_version
                 # Save model to DB
-                save_model_to_db(model, model_version)
+                #save_model_to_db(model, model_version)
                 NEW_W2V_MODEL_PATH = "./versions/" + W2V_MODEL_PATH.replace(".model", f"_v{model_version}.model")
                 model.save(NEW_W2V_MODEL_PATH)
 
     # Save model to DB
-    save_model_to_db(model, model_version)
+    #save_model_to_db(model, model_version)
     
     progress_bar.close()
 
