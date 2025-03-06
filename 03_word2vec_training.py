@@ -15,7 +15,7 @@ from database import (
 W2V_MODEL_PATH = "stackoverflow_word2vec.model"
 VECTOR_SIZE = 200
 WINDOW = 5
-MIN_COUNT = 5
+MIN_COUNT = 10
 WORKERS = 4
 
 logging.basicConfig(format="%(asctime)s : %(levelname)s : %(message)s", level=logging.INFO)
@@ -61,7 +61,7 @@ def train_word2vec():
             # Update progress bar
             progress_bar.update(total_processed - total_rows)
             total_rows = total_processed
-            new_version = total_rows // 1000000
+            new_version = last_processed_id // 1000000
             if new_version > model_version:
                 model_version = new_version
                 # Save model to DB
