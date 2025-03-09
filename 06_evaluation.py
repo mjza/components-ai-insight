@@ -14,16 +14,18 @@ DB_HOST = os.getenv("DB_HOST")
 DB_NAME = os.getenv("DBC_NAME")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_PORT = os.getenv("DB_PORT")
-MODELS_PATH = os.getenv("MODELS_PATH")
+# Load MODELS_PATH from environment variable
+MODELS_PATH = os.getenv("MODELS_PATH", "").strip()  # Handle None and strip whitespace
 
-if MODELS_PATH == None or len(MODELS_PATH) == 0:
-    # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="Compute similarity scores using Word2Vec and BERT.")
-    parser.add_argument("--models_path", type=str, default="./versions/", help="Path to the directory containing models.")
-    args = parser.parse_args()
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description="Compute similarity scores using Word2Vec and BERT.")
+parser.add_argument("--models_path", type=str, default="./versions/", help="Path to the directory containing models.")
+args = parser.parse_args()
 
+# If MODELS_PATH is empty, use the command-line argument
+if not MODELS_PATH:
     MODELS_PATH = args.models_path
-    
+
 BATCH_SIZE = 1000  # Database query batch size
 TOP_N = 200  # Number of top similar words to retrieve
 
