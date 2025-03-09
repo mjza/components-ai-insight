@@ -7,3 +7,6 @@ bs4
 tqdm
 nltk
 gensim
+sentence-transformers 
+torch 
+transformers
