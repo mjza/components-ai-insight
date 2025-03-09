@@ -117,7 +117,7 @@ for model_file in model_files:
                                       bert_similarity_score = EXCLUDED.bert_similarity_score;
                     """, (model_name, attribute, word_clean, w2v_score, bert_score))
 
-                    print(f"🔹 Model: {model_name} | Criteria: {attribute} | Word: {word_clean} | W2V: {w2v_score:.4f} | BERT: {bert_score:.4f}")
+                    # print(f"🔹 Model: {model_name} | Criteria: {attribute} | Word: {word_clean} | W2V: {w2v_score:.4f} | BERT: {bert_score:.4f}")
 
                 conn.commit()
 
