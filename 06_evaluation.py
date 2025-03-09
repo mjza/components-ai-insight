@@ -22,7 +22,7 @@ args = parser.parse_args()
 
 MODELS_PATH = args.models_path
 BATCH_SIZE = 1000  # Database query batch size
-TOP_N = 50  # Number of top similar words to retrieve
+TOP_N = 200  # Number of top similar words to retrieve
 
 # Load BERT model once
 bert_model = SentenceTransformer("microsoft/codebert-base")
@@ -114,9 +114,10 @@ for model_file in model_files:
 
                     print(f"🔹 Model: {model_name} | Criteria: {attribute} | Word: {word_clean} | W2V: {w2v_score:.4f} | BERT: {bert_score:.4f}")
 
+                conn.commit()
+
         # Move to next batch
         offset += BATCH_SIZE
-        conn.commit()  # Commit after each batch
 
     # Free up memory by unloading the model before moving to the next one
     del model
