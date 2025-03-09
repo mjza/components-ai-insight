@@ -14,8 +14,9 @@ DB_HOST = os.getenv("DB_HOST")
 DB_NAME = os.getenv("DBC_NAME")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_PORT = os.getenv("DB_PORT")
+
 # Load MODELS_PATH from environment variable
-MODELS_PATH = os.getenv("MODELS_PATH", "").strip()  # Handle None and strip whitespace
+MODELS_PATH = os.getenv("MODELS_PATH", "").strip()
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Compute similarity scores using Word2Vec and BERT.")
@@ -57,6 +58,11 @@ try:
     conn.commit()
     
     print("✅ Successfully connected to the database.", flush=True)
+
+    # Get already processed model names
+    cursor.execute("SELECT DISTINCT model_name FROM similarity_results;")
+    processed_models = {row[0] for row in cursor.fetchall()}
+
 except Exception as e:
     print(f"❌ Error connecting to the database: {e}", flush=True)
     exit()
@@ -64,11 +70,16 @@ except Exception as e:
 # Get all available Word2Vec models in the directory
 model_files = [fname for fname in os.listdir(MODELS_PATH) if fname.endswith(".model")]
 
+# Remove already processed models
+model_files = [fname for fname in model_files if fname.replace(".model", "") not in processed_models]
+
 if not model_files:
-    print("❌ No Word2Vec models found in the specified directory.", flush=True)
+    print("✅ All models are already processed. Exiting...", flush=True)
+    cursor.close()
+    conn.close()
     exit()
 
-print(f"✅ Found {len(model_files)} Word2Vec models. Processing one at a time.", flush=True)
+print(f"✅ Found {len(model_files)} new Word2Vec models. Processing one at a time.", flush=True)
 
 # Process each model separately
 for model_file in model_files:
@@ -112,20 +123,14 @@ for model_file in model_files:
                     cursor.execute("""
                         INSERT INTO similarity_results (model_name, criteria, similar_word, w2v_similarity_score, bert_similarity_score)
                         VALUES (%s, %s, %s, %s, %s)
-                        ON CONFLICT (model_name, criteria, similar_word)
-                        DO UPDATE SET w2v_similarity_score = EXCLUDED.w2v_similarity_score,
-                                      bert_similarity_score = EXCLUDED.bert_similarity_score;
+                        ON CONFLICT (model_name, criteria, similar_word) DO NOTHING;
                     """, (model_name, attribute, word_clean, w2v_score, bert_score))
-
-                    # print(f"🔹 Model: {model_name} | Criteria: {attribute} | Word: {word_clean} | W2V: {w2v_score:.4f} | BERT: {bert_score:.4f}")
-
-                conn.commit()
 
         # Move to next batch
         offset += BATCH_SIZE
 
-    # Free up memory by unloading the model before moving to the next one
-    del model
+    # commit at the end of the processing of a model.      
+    conn.commit()
 
     print(f"✅ Finished processing {model_name}. Moving to the next model...\n", flush=True)
 
