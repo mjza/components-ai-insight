@@ -32,4 +32,4 @@ find "$LOG_DIR" -type f -name "job_error_*.log" -mtime +7 -exec rm {} \;
 echo "✅ Old logs cleaned up successfully!"
 
 ####### Run your script #########################
-python /work/barcomb_lab/Mahdi/components-ai-insight/06_evaluation.py
+python /work/barcomb_lab/Mahdi/components-ai-insight/06_evaluation.py "$@"
