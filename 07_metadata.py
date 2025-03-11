@@ -1,10 +1,10 @@
 import os
-from gensim.models import Word2Vec
+import gensim 
 
 def load_word2vec_model(model_path):
     """Loads a Word2Vec model from the given path."""
     try:
-        model = Word2Vec.load(model_path, mmap="r")
+        model = gensim.models.KeyedVectors.load(model_path)
         return model
     except Exception as e:
         print(f"Error loading model {model_path}: {e}")
