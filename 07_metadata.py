@@ -1,4 +1,5 @@
 import os
+import argparse
 import gensim
 
 def load_word2vec_model(model_path):
@@ -27,30 +28,24 @@ def get_model_metadata(model, model_name, model_file, is_7g=False):
     return metadata
 
 if __name__ == "__main__":
-    model_folders = [
-        "stackoverflow_7g_v2_word2vec_final",
-        "stackoverflow_7g_word2vec_final",
-        "stackoverflow_v2_word2vec_final",
-        "stackoverflow_word2vec_final",
-    ]
+    parser = argparse.ArgumentParser(description="Extract metadata from Word2Vec models.")
+    parser.add_argument("--path", required=True, help="Path to the folder containing Word2Vec models.")
+    args = parser.parse_args()
+    
+    model_folder = os.path.abspath(args.path)  # Get the full path from argument
     
     metadata_list = []
     
-    for folder in model_folders:
-        model_files = [f for f in os.listdir(folder) if f.endswith(".model")]
-        
-        if not model_files:
-            print(f"No model file found in {folder}")
-            continue
-        
-        model_file = model_files[0]  # Load the first found model file
-        model_path = os.path.join(folder, model_file)
-        model = load_word2vec_model(model_path)
-        
-        if model:
-            is_7g = "7g" in folder
-            metadata = get_model_metadata(model, folder, model_file, is_7g)
-            metadata_list.append(metadata)
+    for root, _, files in os.walk(model_folder):
+        for file in files:
+            if file.endswith(".model"):
+                model_path = os.path.join(root, file)
+                model = load_word2vec_model(model_path)
+                
+                if model:
+                    is_7g = "7g" in root
+                    metadata = get_model_metadata(model, root, file, is_7g)
+                    metadata_list.append(metadata)
     
     for metadata in metadata_list:
         print("\n--- Model Metadata ---")
