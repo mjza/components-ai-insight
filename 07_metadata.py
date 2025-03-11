@@ -1,22 +1,28 @@
 import os
-import gensim 
+import gensim
 
 def load_word2vec_model(model_path):
     """Loads a Word2Vec model from the given path."""
     try:
-        model = gensim.models.KeyedVectors.load(model_path)
+        model = gensim.models.Word2Vec.load(model_path)
         return model
     except Exception as e:
         print(f"Error loading model {model_path}: {e}")
         return None
 
-def get_model_metadata(model, model_name, model_file):
+def get_model_metadata(model, model_name, model_file, is_7g=False):
     """Extracts metadata from a Word2Vec model."""
+    if hasattr(model, 'wv'):
+        vocab = model.wv.index_to_key  # Access vocabulary correctly
+    else:
+        vocab = model.index_to_key  # For KeyedVectors-only models
+    
     metadata = {
         "Model ID": model_file,
         "Model Name": model_name,
-        "Vocabulary Size": len(model.index_to_key),
-        "Vector Size": model.vector_size
+        "Vocabulary Size": len(vocab),
+        "Vector Size": model.wv.vector_size,
+        "Max N-Gram": "7-grams" if is_7g else "Standard"
     }
     return metadata
 
@@ -42,7 +48,8 @@ if __name__ == "__main__":
         model = load_word2vec_model(model_path)
         
         if model:
-            metadata = get_model_metadata(model, folder, model_file)
+            is_7g = "7g" in folder
+            metadata = get_model_metadata(model, folder, model_file, is_7g)
             metadata_list.append(metadata)
     
     for metadata in metadata_list:
