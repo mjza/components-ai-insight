@@ -10,3 +10,5 @@ gensim
 sentence-transformers 
 torch 
 transformers
+tensorflow
+tf-keras
