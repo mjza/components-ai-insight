@@ -4,9 +4,8 @@ import tensorflow as tf
 import numpy as np
 from dotenv import load_dotenv
 from transformers import TFBertModel, BertTokenizer
-from sentence_transformers import util
 
-# 🔹 Disable GPU (prevents CUDA errors)
+# 🔹 Disable GPU (Fixes CUDA issues)
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 # Load environment variables
@@ -22,7 +21,7 @@ DB_PORT = os.getenv("DB_PORT")
 BATCH_SIZE = 1000  # Adjust batch size for efficiency
 
 # Load BERT_SE model
-BERT_SE_PATH = "./BERT_SE_hf"  # Use converted model path
+BERT_SE_PATH = "./BERT_SE_hf"
 
 try:
     print(f"📥 Loading BERT_SE model from {BERT_SE_PATH}...", flush=True)
@@ -42,9 +41,14 @@ def compute_similarity(text1, text2):
     embeddings_1 = bert_se_model(**inputs_1).last_hidden_state[:, 0, :]
     embeddings_2 = bert_se_model(**inputs_2).last_hidden_state[:, 0, :]
 
-    # Compute cosine similarity
-    similarity = np.dot(embeddings_1, embeddings_2.T) / (np.linalg.norm(embeddings_1) * np.linalg.norm(embeddings_2))
-    return float(similarity.numpy())
+    # 🔹 Fix: Normalize embeddings
+    embeddings_1 = tf.linalg.l2_normalize(embeddings_1, axis=-1)
+    embeddings_2 = tf.linalg.l2_normalize(embeddings_2, axis=-1)
+
+    # 🔹 Fix: Compute cosine similarity correctly
+    similarity = tf.reduce_sum(embeddings_1 * embeddings_2, axis=-1).numpy().item()
+    
+    return similarity
 
 # Connect to PostgreSQL database
 try:
