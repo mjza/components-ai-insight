@@ -39,7 +39,8 @@ try:
             criteria TEXT NOT NULL,
             similar_word TEXT NOT NULL,
             w2v_similarity_score FLOAT NOT NULL,
-            bert_similarity_score FLOAT NOT NULL,
+            bert_ms_similarity_score FLOAT NOT NULL,
+            bert_se_similarity_score FLOAT NULL,
             PRIMARY KEY (model_name, criteria, similar_word)
         );
     """)
@@ -89,7 +90,7 @@ while True:
 
                 # Insert or update the similarity table
                 cursor.execute("""
-                    INSERT INTO similarity_results (model_name, criteria, similar_word, w2v_similarity_score, bert_similarity_score)
+                    INSERT INTO similarity_results (model_name, criteria, similar_word, w2v_similarity_score, bert_ms_similarity_score)
                     VALUES (%s, %s, %s, %s, %s)
                     ON CONFLICT (model_name, criteria, similar_word) DO NOTHING;
                 """, (model_name, attribute, word_clean, w2v_score, bert_score))
