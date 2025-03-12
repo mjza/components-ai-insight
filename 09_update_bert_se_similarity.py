@@ -18,7 +18,7 @@ DB_NAME = os.getenv("DBC_NAME")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_PORT = os.getenv("DB_PORT")
 
-BATCH_SIZE = 1000  # Adjust batch size for efficiency
+BATCH_SIZE = 10  # Adjust batch size for efficiency
 
 # Load BERT_SE model
 BERT_SE_PATH = "./BERT_SE_hf"
@@ -107,6 +107,7 @@ while True:
 
     # Commit after processing a batch
     conn.commit()
+    break
 
 print("✅ bert_se_similarity_score updated successfully.", flush=True)
 
