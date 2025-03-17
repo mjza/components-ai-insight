@@ -64,5 +64,6 @@ if __name__ == "__main__":
     logging.info(f"🎉 Word2Vec training completed in {w2v_end - w2v_start:.2f} seconds.")
 
     logging.info("💾 Saving Word2Vec model...")
-    model.wv.save_word2vec_format("MDL_toy.bin", binary=True)
+    model.wv.save_word2vec_format('MDL_SO.txt', binary=False)
+    model.wv.save_word2vec_format("MDL_SO.bin", binary=True)
     logging.info("✅ Model saved successfully!")
