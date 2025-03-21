@@ -2,7 +2,7 @@ import os
 import time
 from tqdm import tqdm
 from gensim.models import Word2Vec
-from database import initialize_staging, fetch_tokenized_batches, update_last_processed_id, last_processed_token
+from database import initialize_staging, fetch_tokenized_sentences, update_last_processed_id, last_processed_token
 
 
 SENTENCE_FILE_PATH = "./sentences/processed_sentences.txt"
@@ -21,7 +21,7 @@ def export_sentences_to_file():
     total_rows = 0
 
     while True:
-        batch = fetch_tokenized_batches(batch_size=10000, start_id=last_id)
+        batch = fetch_tokenized_sentences(batch_size=10000, start_id=last_id)
         if not batch:
             break
 

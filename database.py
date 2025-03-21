@@ -179,6 +179,28 @@ def fetch_tokenized_batches(batch_size=10000, start_id=0):
         cur.close()
         conn.close()
 
+# **Function to Fetch Tokenized Data in Batches**       
+def fetch_tokenized_sentences(batch_size=10000, start_id=0):
+    conn = get_connection(DBC_NAME)
+    if not conn:
+        return []
+
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT post_id, tokenized_text 
+        FROM public.tokenized_posts 
+        WHERE post_id > %s 
+        ORDER BY post_id ASC 
+        LIMIT %s;
+        """,
+        (start_id, batch_size),
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
 
 
 # ---------------------------- TABLE CREATION (STORED IN DBC_NAME) ----------------------------
