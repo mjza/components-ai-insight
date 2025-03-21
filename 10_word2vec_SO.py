@@ -6,7 +6,7 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from gensim.models import Word2Vec
-from database import initialize_staging, read_cleaned_posts, update_last_processed_id, last_processed_token
+from database import initialize_staging, fetch_tokenized_batches, update_last_processed_id, last_processed_token
 
 # Download necessary NLTK resources
 nltk.download("punkt")
@@ -36,22 +36,17 @@ class Sentences:
         total_rows = 0
 
         while True:
-            batch = read_cleaned_posts(batch_size=10000, start_id=last_processed_id)
+            batch = fetch_tokenized_batches(batch_size=10000, start_id=last_processed_id)
             if not batch:
                 break
 
             new_sentences = []
 
             for row in batch:
-                title = str(row[2]) if row[2] else ""
-                body = str(row[3]) if row[3] else ""
-
-                if title or body:
-                    tokens = word_tokenize(f"{title} {body}".lower())
-                    tokens = [word for word in tokens if word.isalnum() and word not in self.stop_words]
-                    sentence = " ".join(tokens)
-                    self.sentences.append(sentence)
-                    new_sentences.append(sentence)
+                text = str(row[1]) if row[1] else ""
+                if text:
+                    self.sentences.append(text)
+                    new_sentences.append(text)
                     total_rows += 1
                     last_processed_id = row[0]
 
